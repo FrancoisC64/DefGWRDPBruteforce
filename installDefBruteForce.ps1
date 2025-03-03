@@ -92,7 +92,7 @@ $taskXml = @'
   <Principals>
     <Principal id="Author">
       <UserId>SYSTEM</UserId>
-      <LogonType>ServiceAccount</LogonType>
+      <LogonType>S4U</LogonType>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
