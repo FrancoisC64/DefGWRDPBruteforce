@@ -5,6 +5,8 @@ $events = Get-WinEvent -LogName "Microsoft-Windows-TerminalServices-Gateway/Oper
 $connections = @()
 $frenchIPs = @()
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 # Extraire l'adresse IP, la date de connexion et l'utilisateur
 foreach ($event in $events) {
     if ($event.Message -match '\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b') {
