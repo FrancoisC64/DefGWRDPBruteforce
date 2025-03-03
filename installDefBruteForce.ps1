@@ -53,8 +53,8 @@ if (!(Test-Path $scriptFolder)) { New-Item -ItemType Directory -Path $scriptFold
 if (!(Test-Path $logFolder)) { New-Item -ItemType Directory -Path $logFolder -Force }
 
 # Télécharger le script depuis une URL
-$scriptURL = "https://example.com/script.ps1"
-$scriptPath = "$scriptFolder\script.ps1"
+$scriptURL = "https://github.com/FrancoisC64/DefGWRDPBruteforce/blob/246c51126efb60f1e978227e832df39d90177233/Def_Bruteforce.ps1"
+$scriptPath = "$scriptFolder\Def_Bruteforce.ps1"
 Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
 
 # Modifier le fichier script.ps1 en remplaçant les IPs françaises
