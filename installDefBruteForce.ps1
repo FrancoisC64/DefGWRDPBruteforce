@@ -46,7 +46,16 @@ foreach ($conn in $uniqueConnections) {
 }
 
 # Obtenir l'IP publique du serveur
-$serverIP = (Invoke-RestMethod -Uri "https://monip.org" -UseBasicParsing).Trim()
+# Télécharger le contenu de la page
+$pageContent = Invoke-WebRequest -Uri "http://monip.org" -UseBasicParsing
+
+# Extraire l'adresse IP avec une expression régulière
+if ($pageContent.Content -match "IP\s*:\s*([\d\.]+)") {
+    $serverIP = $matches[1]
+} else {
+    Write-Output "Impossible de récupérer l'adresse IP publique."
+    $serverIP = $null
+}
 $frenchIPs += $serverIP
 
 # Créer les dossiers si inexistants
