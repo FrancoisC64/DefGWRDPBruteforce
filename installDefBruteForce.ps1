@@ -81,25 +81,49 @@ if (Test-Path $scriptPath) {
 }
 
 
-# Créer une tâche planifiée pour surveiller l'événement 4625 (échec d'authentification)
+# Définition des variables
 $taskName = "MonitorFailedLogins"
-$taskAction = New-ScheduledTaskAction -Execute "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-ExecutionPolicy RemoteSigned -File $scriptPath"
+$taskXmlPath = "C:\_support\Scripts\MonitorFailedLogins.xml"
 
-# Définition du déclencheur basé sur l'événement 4625
-$eventTrigger = New-ScheduledTaskTrigger -AtStartup
-$eventTrigger.Subscription = @"
-<QueryList>
-  <Query Id="0" Path="Security">
-    <Select Path="Security">*[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]</Select>
-  </Query>
-</QueryList>
+# Contenu XML de la tâche planifiée
+$taskXml = @"
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <Triggers>
+    <EventTrigger>
+      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="Security"&gt;&lt;Select Path="Security"&gt;*[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
+      <Enabled>true</Enabled>
+    </EventTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>SYSTEM</UserId>
+      <LogonType>ServiceAccount</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <IdleSettings>
+      <StopOnIdleEnd>true</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+  </Settings>
+  <Actions>
+    <Exec>
+      <Command>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Command>
+      <Arguments>-ExecutionPolicy RemoteSigned -File C:\_support\Scripts\Def_Bruteforce.ps1</Arguments>
+    </Exec>
+  </Actions>
+</Task>
 "@
 
-# Configuration des paramètres de la tâche
-$taskSettings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Hours 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-$taskSettings.MultipleInstances = "IgnoreNew"
-$taskSettings.UseUnifiedSchedulingEngine = $true
-$taskSettings.IdleSettings = New-ScheduledTaskIdleSettings -StopOnIdleEnd $true -RestartOnIdle $false
+# Sauvegarder l'XML dans un fichier
+$taskXml | Out-File -Encoding UTF8 -FilePath $taskXmlPath
 
-# Enregistrement de la tâche planifiée
-Register-ScheduledTask -TaskName $taskName -Action $taskAction -Trigger $eventTrigger -Settings $taskSettings -RunLevel Highest -User "SYSTEM" -Force
+# Importer la tâche avec schtasks.exe
+schtasks.exe /Create /XML $taskXmlPath /TN "$taskName" /F
