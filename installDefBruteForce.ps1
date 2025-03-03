@@ -71,9 +71,26 @@ if (Test-Path $scriptPath) {
     Write-Output "Le fichier Def_Bruteforce.ps1 est introuvable."
 }
 
+
 # Créer une tâche planifiée pour surveiller l'événement 4625 (échec d'authentification)
 $taskName = "MonitorFailedLogins"
 $taskAction = New-ScheduledTaskAction -Execute "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-ExecutionPolicy RemoteSigned -File $scriptPath"
-$taskTrigger = New-ScheduledTaskTrigger -EventId 4625 -LogName Security
-$taskSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -DontStopOnIdleEnd
-Register-ScheduledTask -TaskName $taskName -Action $taskAction -Trigger $taskTrigger -Settings $taskSettings -RunLevel Highest -User "SYSTEM" -Force
+
+# Définition du déclencheur basé sur l'événement 4625
+$eventTrigger = New-ScheduledTaskTrigger -AtStartup
+$eventTrigger.Subscription = @"
+<QueryList>
+  <Query Id="0" Path="Security">
+    <Select Path="Security">*[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]</Select>
+  </Query>
+</QueryList>
+"@
+
+# Configuration des paramètres de la tâche
+$taskSettings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Hours 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$taskSettings.MultipleInstances = "IgnoreNew"
+$taskSettings.UseUnifiedSchedulingEngine = $true
+$taskSettings.IdleSettings = New-ScheduledTaskIdleSettings -StopOnIdleEnd $true -RestartOnIdle $false
+
+# Enregistrement de la tâche planifiée
+Register-ScheduledTask -TaskName $taskName -Action $taskAction -Trigger $eventTrigger -Settings $taskSettings -RunLevel Highest -User "SYSTEM" -Force
