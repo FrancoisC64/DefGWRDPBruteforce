@@ -86,7 +86,7 @@ $taskName = "MonitorFailedLogins"
 $taskXmlPath = "C:\_support\Scripts\MonitorFailedLogins.xml"
 
 # Contenu XML de la tâche planifiée
-$taskXml = @"
+$taskXml = @'
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <Triggers>
@@ -120,10 +120,11 @@ $taskXml = @"
     </Exec>
   </Actions>
 </Task>
-"@
+'@
 
-# Sauvegarder l'XML dans un fichier
-$taskXml | Out-File -Encoding UTF8 -FilePath $taskXmlPath
+# Sauvegarder l'XML avec l'encodage UTF-8 sans BOM
+[System.Text.Encoding]::UTF8.GetBytes($taskXml) | Set-Content -Path $taskXmlPath -Encoding Byte
 
 # Importer la tâche avec schtasks.exe
 schtasks.exe /Create /XML $taskXmlPath /TN "$taskName" /F
+
