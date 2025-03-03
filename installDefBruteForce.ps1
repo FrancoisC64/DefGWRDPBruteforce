@@ -89,20 +89,6 @@ $taskXmlPath = "C:\_support\Scripts\MonitorFailedLogins.xml"
 $taskXml = @'
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <Triggers>
-    <EventTrigger>
-      <Enabled>true</Enabled>
-      <Subscription>
-        <QueryList>
-          <Query Id="0" Path="Security">
-            <Select Path="Security">
-              *[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]
-            </Select>
-          </Query>
-        </QueryList>
-      </Subscription>
-    </EventTrigger>
-  </Triggers>
   <Principals>
     <Principal id="Author">
       <UserId>SYSTEM</UserId>
@@ -121,6 +107,21 @@ $taskXml = @'
     </IdleSettings>
     <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
   </Settings>
+  <Triggers>
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
+      <Subscription>
+        <QueryList>
+          <Query Id="0" Path="Security">
+            <Select Path="Security">
+              *[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]
+            </Select>
+          </Query>
+        </QueryList>
+      </Subscription>
+    </EventTrigger>
+  </Triggers>
   <Actions>
     <Exec>
       <Command>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Command>
