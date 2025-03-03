@@ -91,6 +91,7 @@ $taskXml = @'
 <Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <Triggers>
     <EventTrigger>
+      <Enabled>true</Enabled>
       <Subscription>
         <QueryList>
           <Query Id="0" Path="Security">
@@ -100,7 +101,6 @@ $taskXml = @'
           </Query>
         </QueryList>
       </Subscription>
-      <Enabled>true</Enabled>
     </EventTrigger>
   </Triggers>
   <Principals>
