@@ -91,7 +91,15 @@ $taskXml = @'
 <Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <Triggers>
     <EventTrigger>
-      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="Security"&gt;&lt;Select Path="Security"&gt;*[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
+      <Subscription>
+        <QueryList>
+          <Query Id="0" Path="Security">
+            <Select Path="Security">
+              *[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]
+            </Select>
+          </Query>
+        </QueryList>
+      </Subscription>
       <Enabled>true</Enabled>
     </EventTrigger>
   </Triggers>
@@ -122,9 +130,8 @@ $taskXml = @'
 </Task>
 '@
 
-# Sauvegarder l'XML avec l'encodage UTF-8 sans BOM
-[System.Text.Encoding]::UTF8.GetBytes($taskXml) | Set-Content -Path $taskXmlPath -Encoding Byte
+# Sauvegarde en UTF-8 sans BOM pour éviter les erreurs d'encodage
+[System.Text.Encoding]::UTF8.GetBytes($taskXml) | Set-Content -Path "C:\_support\Scripts\MonitorFailedLogins.xml" -Encoding Byte
 
-# Importer la tâche avec schtasks.exe
-schtasks.exe /Create /XML $taskXmlPath /TN "$taskName" /F
-
+# Création de la tâche planifiée avec le fichier XML
+schtasks.exe /Create /XML "C:\_support\Scripts\MonitorFailedLogins.xml" /TN "MonitorFailedLogins" /F
