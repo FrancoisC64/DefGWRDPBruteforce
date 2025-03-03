@@ -1,11 +1,12 @@
+# Activer TLS 1.2 pour éviter les erreurs SSL/TLS
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 # Récupérer les événements 302 de la passerelle RDP
 $events = Get-WinEvent -LogName "Microsoft-Windows-TerminalServices-Gateway/Operational" | Where-Object { $_.Id -eq 302 }
 
 # Initialiser une liste pour stocker les informations des connexions
 $connections = @()
 $frenchIPs = @()
-
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # Extraire l'adresse IP, la date de connexion et l'utilisateur
 foreach ($event in $events) {
@@ -54,20 +55,20 @@ $logFolder = "C:\_support\Scripts\Logs"
 if (!(Test-Path $scriptFolder)) { New-Item -ItemType Directory -Path $scriptFolder -Force }
 if (!(Test-Path $logFolder)) { New-Item -ItemType Directory -Path $logFolder -Force }
 
-# Télécharger le script depuis une URL
-$scriptURL = "https://github.com/FrancoisC64/DefGWRDPBruteforce/blob/246c51126efb60f1e978227e832df39d90177233/Def_Bruteforce.ps1"
+# Télécharger le script depuis GitHub
+$scriptURL = "https://raw.githubusercontent.com/FrancoisC64/DefGWRDPBruteforce/3ba3a268d829f43080a4ea2136077bf527bae36a/Def_Bruteforce.ps1"
 $scriptPath = "$scriptFolder\Def_Bruteforce.ps1"
 Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
 
-# Modifier le fichier script.ps1 en remplaçant les IPs françaises
+# Modifier le fichier Def_Bruteforce.ps1 en remplaçant les IPs françaises
 if (Test-Path $scriptPath) {
     $scriptContent = Get-Content $scriptPath
-    $newAllowedIPs = "$allowedIPs = @(" + ($frenchIPs -join '", "') + ")"
+    $newAllowedIPs = "`$allowedIPs = @(" + ($frenchIPs -join '", "') + ")"
     $scriptContent = $scriptContent -replace '\$allowedIPs = @\(.*\)', $newAllowedIPs
     $scriptContent | Set-Content $scriptPath
-    Write-Output "Le fichier script.ps1 a été mis à jour avec les nouvelles IPs françaises et l'IP du serveur."
+    Write-Output "Le fichier Def_Bruteforce.ps1 a été mis à jour avec les nouvelles IPs françaises et l'IP du serveur."
 } else {
-    Write-Output "Le fichier script.ps1 est introuvable."
+    Write-Output "Le fichier Def_Bruteforce.ps1 est introuvable."
 }
 
 # Créer une tâche planifiée pour surveiller l'événement 4625 (échec d'authentification)
