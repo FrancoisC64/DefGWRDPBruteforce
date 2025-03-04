@@ -13,7 +13,7 @@ Ce script PowerShell permet de bloquer automatiquement les adresses IP distantes
 
 ## Installation
 
-1. **Exécuter le script d'installation `installDefBruteForce.ps1`**
+1. **Exécuter le script d'installation `installDefBruteForce.ps1`** Actuelement le script échoue sur deux point voir roadmap.md
    
    Ce script automatise la configuration en réalisant les étapes suivantes :
    - Récupère les événements 302 du journal de la passerelle RDP pour identifier les connexions distantes.
