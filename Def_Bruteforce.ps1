@@ -7,8 +7,8 @@
 # Définir le chemin du fichier de log IIS
 $logFilePath = "C:\inetpub\logs\LogFiles\W3SVC1\*.log"
 
-# Définir la liste des adresses IP autorisées
-$allowedIPs = @("") # Ajoutez ici les adresses IP autorisées
+# Chemin du fichier JSON des ips autorisee
+$jsonFile = "C:\_Support\Scripts\ips.json"
 
 # Définir le chemin du fichier de journalisation
 $logFolderPath = "C:\_Support\Scripts\Logs"
@@ -17,6 +17,10 @@ $logFolderPath = "C:\_Support\Scripts\Logs"
 if (!(Test-Path $logFolderPath)) {
     New-Item -ItemType Directory -Path $logFolderPath -Force | Out-Null
 }
+
+# Chargement des ips autorisees
+$jsonData = Get-Content $jsonFile | ConvertFrom-Json
+$allowedIPs = $jsonData.allowedIPs
 
 # Fonction pour journaliser les messages
 function Write-Log {
