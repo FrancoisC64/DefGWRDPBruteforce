@@ -68,14 +68,14 @@ function Block-IP {
 # Récupérer le dernier événement 4625 du journal de sécurité
 try {
     $event = Get-WinEvent -LogName Security | Where-Object { $_.Id -eq 4625 } | Select-Object -First 1
-    $eventTimeUTC1 = $event.TimeCreated
-    $eventTimeUTC = $eventTimeUTC1.AddHours(-1)
+    $xml = [xml]$event.ToXml()
+    $eventTimeUTC = [DateTime]$xml.Event.System.TimeCreated.SystemTime
     $eventTimeUTCString = $eventTimeUTC.ToString("yyyy-MM-dd HH:mm:ss")
     $startTime = $eventTimeUTC.AddSeconds(-1).ToString("yyyy-MM-dd HH:mm:ss")
     $endTime = $eventTimeUTC.AddSeconds(1).ToString("yyyy-MM-dd HH:mm:ss")
-    Write-Log "Événement : $endTime"
+    Write-Log "evenement : $endTime"
 } catch {
-    Write-Log "Erreur lors de la récupération de l'événement 4625 : $_"
+    Write-Log "Erreur lors de la récupÃ©ration de l'evenement 4625 : $_"
     exit
 }
 
@@ -114,7 +114,8 @@ $ipAddresses = $logContent | Where-Object {
     ($matches[1] -le $endTime) -and
     ($_ -match "POST")
 } | ForEach-Object {
-    if ($_ -match "443 - (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})") {
+    Write-Log $ipAddresses
+    if ($_ -match "443.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})") {
         $matches[1]
     }
 }
@@ -125,8 +126,9 @@ if ($ipAddresses.Count -gt 1) {
 } else {
     $ipAddress = $ipAddresses
 }
-
+if ($ipAddress -ne $null){
 Write-Log "IP récupérée : $ipAddress"
+}
 
 # Vérifier si l'adresse IP est dans la liste des adresses autorisées
 if ($allowedIPs -notcontains $ipAddress -and $ipAddress -ne $null -and -not (IsPrivateIP $ipAddress)) {
