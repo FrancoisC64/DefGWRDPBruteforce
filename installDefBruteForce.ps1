@@ -7,6 +7,12 @@ $events = Get-WinEvent -LogName "Microsoft-Windows-TerminalServices-Gateway/Oper
 # Initialiser une liste pour stocker les informations des connexions
 $connections = @()
 $frenchIPs = @()
+# Créer les dossiers si inexistants
+$scriptFolder = "C:\_support\Scripts"
+$logFolder = "C:\_support\Scripts\Logs"
+$jsonFile = "C:\_support\Scripts\ips.json"
+if (!(Test-Path $scriptFolder)) { New-Item -ItemType Directory -Path $scriptFolder -Force }
+if (!(Test-Path $logFolder)) { New-Item -ItemType Directory -Path $logFolder -Force }
 
 # Extraire l'adresse IP, la date de connexion et l'utilisateur
 foreach ($event in $events) {
@@ -31,19 +37,19 @@ foreach ($event in $events) {
 $uniqueConnections = $connections | Sort-Object IP -Unique
 
 # Vérifier la géolocalisation des IPs via l'API GeoIP de MaxMind
-foreach ($conn in $uniqueConnections) {
-    $url = "https://freegeoip.app/json/$($conn.IP)"
-    try {
-        $response = Invoke-RestMethod -Uri $url -Method Get
-        if ($response.country_name -ne "France") {
-            Write-Output "IP: $($conn.IP) - Pays: $($response.country_name), Ville: $($response.city), Région: $($response.region_name) - Date: $($conn.Date) - Utilisateur: $($conn.Utilisateur)"
-        } else {
-            $frenchIPs += $conn.IP
-        }
-    } catch {
-        Write-Output "Impossible d'obtenir la géolocalisation pour l'IP: $($conn.IP)"
-    }
-}
+#foreach ($conn in $uniqueConnections) {
+#    $url = "https://freegeoip.app/json/$($conn.IP)"
+#    try {
+#        $response = Invoke-RestMethod -Uri $url -Method Get
+#        if ($response.country_name -ne "France") {
+#            Write-Output "IP: $($conn.IP) - Pays: $($response.country_name), Ville: $($response.city), Région: $($response.region_name) - Date: $($conn.Date) - Utilisateur: $($conn.Utilisateur)"
+#        } else {
+#            $frenchIPs += $conn.IP
+#        }
+#    } catch {
+#        Write-Output "Impossible d'obtenir la géolocalisation pour l'IP: $($conn.IP)"
+#    }
+#}
 
 # Obtenir l'IP publique du serveur
 # Télécharger le contenu de la page
@@ -56,7 +62,7 @@ if ($pageContent.Content -match "IP\s*:\s*([\d\.]+)") {
     Write-Output "Impossible de récupérer l'adresse IP publique."
     $serverIP = $null
 }
-$frenchIPs += $serverIP
+
 
 # Créer les dossiers si inexistants
 $scriptFolder = "C:\_support\Scripts"
@@ -71,68 +77,13 @@ Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
 
 # Modifier le fichier Def_Bruteforce.ps1 en remplaçant les IPs françaises
 if (Test-Path $scriptPath) {
-    $scriptContent = Get-Content $scriptPath
-    $newAllowedIPs = "`$allowedIPs = @(" + ($frenchIPs -join '", "') + ")"
-    $scriptContent = $scriptContent -replace '\$allowedIPs = @\(.*\)', $newAllowedIPs
-    $scriptContent | Set-Content $scriptPath
-    Write-Output "Le fichier Def_Bruteforce.ps1 a été mis à jour avec les nouvelles IPs françaises et l'IP du serveur."
-} else {
-    Write-Output "Le fichier Def_Bruteforce.ps1 est introuvable."
+# Extraire uniquement les adresses IP uniques
+$allowedIPs = $uniqueConnections.IP
+$allowedIPs += $serverIP
+# Créer un objet PowerShell avec la structure JSON
+$jsonData = @{ allowedIPs = $allowedIPs } | ConvertTo-Json -Depth 1
+# Écrire l'objet JSON dans un fichier
+$jsonData | Set-Content -Path $jsonFile -Encoding UTF8
+# Afficher un message de confirmation
+Write-Output "Le fichier JSON a été créé : $jsonFile"
 }
-
-
-# Définition des variables
-$taskName = "MonitorFailedLogins"
-$taskXmlPath = "C:\_support\Scripts\MonitorFailedLogins.xml"
-
-# Contenu XML de la tâche planifiée
-$taskXml = @'
-<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.3" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <Principals>
-    <Principal id="Author">
-      <UserId>SYSTEM</UserId>
-      <LogonType>S4U</LogonType>
-      <RunLevel>HighestAvailable</RunLevel>
-    </Principal>
-  </Principals>
-  <Settings>
-    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
-    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
-    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
-    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-    <IdleSettings>
-      <StopOnIdleEnd>true</StopOnIdleEnd>
-      <RestartOnIdle>false</RestartOnIdle>
-    </IdleSettings>
-    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
-  </Settings>
-  <Triggers>
-    <EventTrigger>
-      <Enabled>true</Enabled>
-      <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
-      <Subscription>
-        <QueryList>
-          <Query Id="0" Path="Security">
-            <Select Path="Security">
-              *[System[Provider[@Name='Microsoft-Windows-Security-Auditing'] and EventID=4625]]
-            </Select>
-          </Query>
-        </QueryList>
-      </Subscription>
-    </EventTrigger>
-  </Triggers>
-  <Actions>
-    <Exec>
-      <Command>C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</Command>
-      <Arguments>-ExecutionPolicy RemoteSigned -File C:\_support\Scripts\Def_Bruteforce.ps1</Arguments>
-    </Exec>
-  </Actions>
-</Task>
-'@
-
-# Sauvegarde en UTF-8 sans BOM pour éviter les erreurs d'encodage
-[System.Text.Encoding]::UTF8.GetBytes($taskXml) | Set-Content -Path "C:\_support\Scripts\MonitorFailedLogins.xml" -Encoding Byte
-
-# Création de la tâche planifiée avec le fichier XML
-schtasks.exe /Create /XML "C:\_support\Scripts\MonitorFailedLogins.xml" /TN "MonitorFailedLogins" /F
