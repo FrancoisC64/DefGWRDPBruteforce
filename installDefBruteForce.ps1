@@ -71,14 +71,14 @@ if (!(Test-Path $scriptFolder)) { New-Item -ItemType Directory -Path $scriptFold
 if (!(Test-Path $logFolder)) { New-Item -ItemType Directory -Path $logFolder -Force }
 
 # Télécharger le script depuis GitHub
-$scriptURL = "https://raw.githubusercontent.com/FrancoisC64/DefGWRDPBruteforce/3ba3a268d829f43080a4ea2136077bf527bae36a/Def_Bruteforce.ps1"
+$scriptURL = "https://raw.githubusercontent.com/FrancoisC64/DefGWRDPBruteforce/refs/heads/main/Def_Bruteforce.ps1"
 $scriptPath = "$scriptFolder\Def_Bruteforce.ps1"
 Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
 
 # Modifier le fichier Def_Bruteforce.ps1 en remplaçant les IPs françaises
 if (Test-Path $scriptPath) {
 # Extraire uniquement les adresses IP uniques
-$allowedIPs = @("")
+$allowedIPs = @()
 $allowedIPs += $uniqueConnections.IP
 $allowedIPs += $serverIP
 # Créer un objet PowerShell avec la structure JSON
