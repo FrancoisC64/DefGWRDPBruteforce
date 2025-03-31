@@ -78,7 +78,8 @@ Invoke-WebRequest -Uri $scriptURL -OutFile $scriptPath
 # Modifier le fichier Def_Bruteforce.ps1 en remplaçant les IPs françaises
 if (Test-Path $scriptPath) {
 # Extraire uniquement les adresses IP uniques
-$allowedIPs = $uniqueConnections.IP
+$allowedIPs = @("")
+$allowedIPs += $uniqueConnections.IP
 $allowedIPs += $serverIP
 # Créer un objet PowerShell avec la structure JSON
 $jsonData = @{ allowedIPs = $allowedIPs } | ConvertTo-Json -Depth 1
